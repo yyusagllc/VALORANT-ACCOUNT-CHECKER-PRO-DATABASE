@@ -66,9 +66,17 @@ class CheckerEngine:
         mmr_raw = client.get_mmr()
         rank_data = self._process_rank(mmr_raw)
 
-        # 5. KUŞANILMIŞ ENVANTER (Silahlar, Spreyler, Kart, Unvan, Çerçeve)
-        loadout_raw = client.get_player_loadout()
-        loadout_data = self._process_loadout(loadout_raw)
+        # 5. KUŞANILMIŞ ENVANTER (Kullanıcı talebi doğrultusunda pasifleştirildi)
+        loadout_data = {
+            "identity": {
+                "card": content_service.resolve_card(""),
+                "title": content_service.resolve_title(""),
+                "border_uuid": "",
+                "hide_account_level": False,
+            },
+            "guns": [],
+            "sprays": [],
+        }
 
         # 6. CEZALAR VE KISITLAMALAR
         penalties_raw = client.get_penalties()
@@ -78,13 +86,13 @@ class CheckerEngine:
         storefront_raw = client.get_storefront()
         store_data = self._process_storefront(storefront_raw)
 
-        # 8. TÜM SAHİP OLUNAN ENVANTER (Skinler, Uğurluklar, Spreyler, Kartlar, Unvanlar, Ajanlar)
-        entitlements_raw = client.get_all_entitlements()
-        inventory_data = self._process_inventory(entitlements_raw)
-
-        # 9. GÖREVLER VE SAVAŞ BİLETİ KONTRATLARI
+        # 8. GÖREVLER VE SAVAŞ BİLETİ KONTRATLARI
         contracts_raw = client.get_contracts_and_missions()
         missions_data = self._process_missions_and_contracts(contracts_raw)
+
+        # 9. TÜM SAHİP OLUNAN ENVANTER (Skinler, Uğurluklar, Spreyler, Kartlar, Unvanlar, Ajanlar)
+        entitlements_raw = client.get_all_entitlements()
+        inventory_data = self._process_inventory(entitlements_raw, contracts_raw=contracts_raw)
 
         # 10. MAÇ GEÇMİŞİ VE MAÇ DETAYLARI
         match_ids = client.get_match_history(count=MATCH_COUNT)
@@ -385,12 +393,52 @@ class CheckerEngine:
         equipped_guns = []
         guns_list = loadout_core.get("Guns") or loadout_core.get("guns") or raw.get("Guns") or []
         for g in guns_list:
-            w_uuid = g.get("ID") or g.get("id")
-            skin_uuid = g.get("ChromaID") or g.get("SkinLevelID") or g.get("SkinID") or g.get("skinId")
+            w_uuid = g.get("ID") or g.get("id") or ""
+            weapon_meta = content_service.resolve_weapon(w_uuid) if w_uuid else {}
+            base_weapon_name = weapon_meta.get("name") or "Silah"
+            base_weapon_icon = weapon_meta.get("icon") or ""
+
+            chroma_uuid = g.get("ChromaID") or g.get("chromaId")
+            level_uuid = g.get("SkinLevelID") or g.get("skinLevelId")
+            skin_uuid = g.get("SkinID") or g.get("skinId")
             buddy_uuid = g.get("CharmID") or g.get("CharmLevelID") or g.get("charmId")
 
-            skin_resolved = content_service.resolve_skin(skin_uuid)
+            # Sıralı akıllı çözümleme: Chroma -> Level -> Skin
+            skin_resolved = None
+            for candidate_uuid in [chroma_uuid, level_uuid, skin_uuid]:
+                if candidate_uuid:
+                    res = content_service.resolve_skin(candidate_uuid)
+                    if res and res.get("skin_name") != "Standart Silah":
+                        skin_resolved = res
+                        break
+
+            if not skin_resolved and (skin_uuid or level_uuid or chroma_uuid):
+                skin_resolved = content_service.resolve_skin(skin_uuid or level_uuid or chroma_uuid)
+
+            if not skin_resolved:
+                skin_resolved = {
+                    "skin_uuid": skin_uuid or "",
+                    "weapon_name": base_weapon_name,
+                    "skin_name": f"Standart {base_weapon_name}",
+                    "theme_name": "Standart",
+                    "icon": base_weapon_icon,
+                    "rarity": "Standart",
+                    "rarity_color": "#ece8e1",
+                    "rarity_icon": "",
+                }
+
+            if not skin_resolved.get("icon"):
+                skin_resolved["icon"] = base_weapon_icon
+
+            if skin_resolved.get("weapon_name") in ("Standart", "Bilinmeyen Silah") and base_weapon_name:
+                skin_resolved["weapon_name"] = base_weapon_name
+
             buddy_resolved = content_service.resolve_buddy(buddy_uuid) if buddy_uuid else None
+
+            is_custom = not (
+                skin_resolved["skin_name"].lower().startswith("standart") or
+                skin_resolved["skin_name"].lower() == "standart silah"
+            )
 
             equipped_guns.append({
                 "weapon_uuid": w_uuid,
@@ -400,6 +448,8 @@ class CheckerEngine:
                 "icon": skin_resolved["icon"],
                 "rarity": skin_resolved["rarity"],
                 "rarity_color": skin_resolved["rarity_color"],
+                "rarity_icon": skin_resolved.get("rarity_icon", ""),
+                "is_custom": is_custom,
                 "buddy": buddy_resolved["name"] if buddy_resolved else None,
                 "buddy_icon": buddy_resolved["icon"] if buddy_resolved else None,
             })
@@ -435,33 +485,84 @@ class CheckerEngine:
         store_offers = skins_panel.get("SingleItemStoreOffers") or skins_panel.get("singleItemStoreOffers") or []
         remaining_sec = skins_panel.get("SingleItemOffersRemainingDurationInSeconds") or skins_panel.get("singleItemOffersRemainingDurationInSeconds") or 0
 
-        # Fiyat haritası oluştur (OfferID -> VP maliyeti)
-        prices_map = {}
+        # Fiyat ve Reward haritası oluştur (OfferID -> VP maliyeti ve Reward ItemID)
+        offer_to_price = {}
+        offer_to_item = {}
         for so in store_offers:
             offer_id = str(so.get("OfferID") or so.get("offerId") or "").lower()
             cost = so.get("Cost") or so.get("cost") or {}
             vp_price = list(cost.values())[0] if cost else 1775
-            prices_map[offer_id] = vp_price
+            if offer_id:
+                offer_to_price[offer_id] = vp_price
 
-        for skin_uuid in single_offers:
-            skin = content_service.resolve_skin(skin_uuid)
-            price = prices_map.get(str(skin_uuid).lower(), 1775)
-            daily_offers.append({
-                "skin_uuid": skin_uuid,
-                "weapon_name": skin["weapon_name"],
-                "skin_name": skin["skin_name"],
-                "theme_name": skin.get("theme_name", ""),
-                "icon": skin["icon"],
-                "rarity": skin["rarity"],
-                "rarity_color": skin["rarity_color"],
-                "price": price,
-            })
+            rewards = so.get("Rewards") or so.get("rewards") or []
+            for r in rewards:
+                item_id = r.get("ItemID") or r.get("itemId")
+                if item_id:
+                    offer_to_item[offer_id] = str(item_id).lower()
+                    break
+
+        seen_skin_uuids = set()
+
+        # 1. single_offers listesinden çöz
+        for s_id in single_offers:
+            s_str = str(s_id).lower()
+            skin = content_service.resolve_skin(s_str)
+            # Eğer doğrudan eşleşmediyse reward item ID üzerinden dene
+            if (not skin or skin.get("skin_name") == "Standart Silah") and s_str in offer_to_item:
+                skin = content_service.resolve_skin(offer_to_item[s_str])
+
+            price = offer_to_price.get(s_str, 1775)
+            skin_uuid = skin.get("skin_uuid") or s_str
+            if skin_uuid and skin_uuid not in seen_skin_uuids and skin.get("skin_name") != "Standart Silah":
+                seen_skin_uuids.add(skin_uuid)
+                daily_offers.append({
+                    "skin_uuid": skin_uuid,
+                    "weapon_name": skin.get("weapon_name", "Silah"),
+                    "skin_name": skin.get("skin_name", "Bilinmeyen Skin"),
+                    "theme_name": skin.get("theme_name", ""),
+                    "icon": skin.get("icon", ""),
+                    "rarity": skin.get("rarity", "Standart"),
+                    "rarity_color": skin.get("rarity_color", "#ece8e1"),
+                    "price": price,
+                })
+
+        # 2. Eğer daily_offers 4'ten azsa ve store_offers varsa, store_offers üzerinden eksikleri tamamla
+        if len(daily_offers) < 4 and store_offers:
+            for so in store_offers:
+                offer_id = str(so.get("OfferID") or so.get("offerId") or "").lower()
+                cost = so.get("Cost") or so.get("cost") or {}
+                price = list(cost.values())[0] if cost else 1775
+
+                target_item_id = offer_to_item.get(offer_id, offer_id)
+                skin = content_service.resolve_skin(target_item_id)
+                if not skin or skin.get("skin_name") == "Standart Silah":
+                    skin = content_service.resolve_skin(offer_id)
+
+                skin_uuid = skin.get("skin_uuid") or target_item_id
+                if skin_uuid and skin_uuid not in seen_skin_uuids:
+                    seen_skin_uuids.add(skin_uuid)
+                    daily_offers.append({
+                        "skin_uuid": skin_uuid,
+                        "weapon_name": skin.get("weapon_name", "Silah"),
+                        "skin_name": skin.get("skin_name", "Bilinmeyen Skin"),
+                        "theme_name": skin.get("theme_name", ""),
+                        "icon": skin.get("icon", ""),
+                        "rarity": skin.get("rarity", "Standart"),
+                        "rarity_color": skin.get("rarity_color", "#ece8e1"),
+                        "price": price,
+                    })
 
         # Öne çıkan paket
         bundle_info = None
         featured_bundle = raw.get("FeaturedBundle") or raw.get("featuredBundle") or {}
         bundle_data = featured_bundle.get("Bundle") or featured_bundle.get("bundle") or {}
-        bundle_uuid = bundle_data.get("ID") or bundle_data.get("id")
+        if not bundle_data and featured_bundle.get("Bundles"):
+            sub_bundles = featured_bundle.get("Bundles") or []
+            if isinstance(sub_bundles, list) and len(sub_bundles) > 0:
+                bundle_data = sub_bundles[0]
+
+        bundle_uuid = bundle_data.get("DataAssetID") or bundle_data.get("dataAssetId") or bundle_data.get("ID") or bundle_data.get("id")
         if bundle_uuid:
             res_b = content_service.resolve_bundle(bundle_uuid)
             base_cost_dict = bundle_data.get("TotalBaseCost") or bundle_data.get("totalBaseCost") or {}
@@ -496,6 +597,7 @@ class CheckerEngine:
         # Gece Pazarı (Bonus Store)
         bonus_store = raw.get("BonusStore") or raw.get("bonusStore") or {}
         night_market_offers = []
+        bonus_rem_sec = bonus_store.get("BonusStoreRemainingDurationInSeconds") or bonus_store.get("bonusStoreRemainingDurationInSeconds") or 0
         for offer in bonus_store.get("BonusStoreOffers") or bonus_store.get("bonusStoreOffers") or []:
             offer_obj = offer.get("Offer") or offer.get("offer") or {}
             rewards = offer_obj.get("Rewards") or offer_obj.get("rewards") or []
@@ -503,21 +605,47 @@ class CheckerEngine:
             disc_costs = offer.get("DiscountCosts") or offer.get("discountCosts") or {}
             orig_costs = offer_obj.get("Cost") or offer_obj.get("cost") or {}
             cost = list(disc_costs.values())[0] if disc_costs else 0
-            orig_cost = list(orig_costs.values())[0] if orig_costs else 0
+            orig_cost = list(orig_costs.values())[0] if orig_costs else cost
+            discount_saved = max(0, orig_cost - cost)
 
+            target_item_id = None
             for reward in rewards:
-                r_skin = content_service.resolve_skin(reward.get("ItemID") or reward.get("itemId"))
-                night_market_offers.append({
-                    "weapon_name": r_skin["weapon_name"],
-                    "skin_name": r_skin["skin_name"],
-                    "theme_name": r_skin.get("theme_name", ""),
-                    "icon": r_skin["icon"],
-                    "rarity": r_skin["rarity"],
-                    "rarity_color": r_skin["rarity_color"],
-                    "original_cost": orig_cost,
-                    "discounted_cost": cost,
-                    "discount_percent": discount_percent,
-                })
+                target_item_id = reward.get("ItemID") or reward.get("itemId")
+                if target_item_id:
+                    break
+            if not target_item_id:
+                target_item_id = offer_obj.get("OfferID") or offer_obj.get("offerId")
+
+            r_skin = content_service.resolve_skin(target_item_id) if target_item_id else None
+            if not r_skin or r_skin.get("skin_name") == "Standart Silah":
+                off_id = offer_obj.get("OfferID") or offer_obj.get("offerId")
+                if off_id:
+                    r_skin = content_service.resolve_skin(off_id)
+
+            if not r_skin:
+                r_skin = {
+                    "skin_uuid": target_item_id or "",
+                    "weapon_name": "Silah",
+                    "skin_name": "Gece Pazarı Kaplaması",
+                    "theme_name": "",
+                    "icon": "",
+                    "rarity": "Özel",
+                    "rarity_color": "#a855f7",
+                }
+
+            night_market_offers.append({
+                "skin_uuid": r_skin.get("skin_uuid") or target_item_id,
+                "weapon_name": r_skin.get("weapon_name", "Silah"),
+                "skin_name": r_skin.get("skin_name", "Gece Pazarı Skini"),
+                "theme_name": r_skin.get("theme_name", ""),
+                "icon": r_skin.get("icon", ""),
+                "rarity": r_skin.get("rarity", "Seçkin"),
+                "rarity_color": r_skin.get("rarity_color", "#a855f7"),
+                "original_cost": orig_cost,
+                "discounted_cost": cost,
+                "discount_percent": discount_percent,
+                "discount_saved": discount_saved,
+            })
 
         # Aksesuar Mağazası (Accessory Store - Kingdom Credits)
         accessory_store = raw.get("AccessoryStore") or raw.get("accessoryStore") or {}
@@ -547,6 +675,8 @@ class CheckerEngine:
             "night_market": {
                 "is_active": len(night_market_offers) > 0,
                 "offers": night_market_offers,
+                "remaining_seconds": bonus_rem_sec,
+                "remaining_duration_text": format_remaining_duration(bonus_rem_sec) if bonus_rem_sec else "Bilinmiyor",
             },
             "accessory_store": {
                 "is_active": len(acc_offers) > 0,
@@ -554,7 +684,7 @@ class CheckerEngine:
             }
         }
 
-    def _process_inventory(self, all_entitlements: Dict[str, List[str]]) -> Dict[str, Any]:
+    def _process_inventory(self, all_entitlements: Dict[str, List[str]], contracts_raw: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Tüm envanter kategorilerini (Skinler, Uğurluklar, Spreyler, Kartlar, Unvanlar, Ajanlar) ayrıştırır."""
         # 1. Silah Skinleri
         unique_skins = {}
@@ -624,6 +754,19 @@ class CheckerEngine:
         owned_agent_ids = set(str(a).lower() for a in all_entitlements.get("agents", []))
         for starter_uuid in STARTER_AGENT_UUIDS:
             owned_agent_ids.add(starter_uuid.lower())
+
+        # Kontratlar üzerinden açılmış ajanları da kontrol et (Secondary fallback)
+        if contracts_raw:
+            contracts_list = contracts_raw.get("Contracts") or contracts_raw.get("contracts") or []
+            for c in contracts_list:
+                c_id = str(c.get("ContractDefinitionID") or c.get("contractDefinitionId") or "").lower()
+                res_c = content_service.resolve_contract(c_id)
+                if res_c.get("relationType") == "Agent" and res_c.get("relationUuid"):
+                    prog = c.get("ContractProgression") or c.get("contractProgression") or {}
+                    total_xp = prog.get("TotalProgressionEarned", 0) or 0
+                    lvl_reached = prog.get("ProgressionLevelReached", 0) or 0
+                    if total_xp >= 175000 or lvl_reached >= 5 or c.get("State") == "completed":
+                        owned_agent_ids.add(str(res_c["relationUuid"]).lower())
 
         all_playable_agents = [a for a in content_service.get_agents() if a.get("isPlayableCharacter")]
         agents_roster = []

@@ -123,7 +123,7 @@ CURRENCY_IDS = {
 ITEM_TYPES = {
     "SKIN_LEVEL": "e7c63390-eda7-46e0-bb7a-a6abdacd2433",          # Silah Skin Seviyeleri
     "SKIN_CHROMA": "3ad1b2b2-acdb-4524-852f-954a76ddae0a",         # Skin Renk Varyantları (Chromas)
-    "AGENT": "01bb38e1-da47-4e6a-9d3d-945fe4655707",               # Açılan Ajanlar (Agents)
+    "AGENT": "01bb38e1-da47-4e6a-9b3d-945fe4655707",               # Açılan Ajanlar (Agents)
     "CONTRACT_DEFINITION": "f85cb6f7-33e5-4dc8-b609-ec7212301948",  # Kontrat Tanımları
     "BUDDY": "dd3bf334-87f3-40bd-b043-682a57a8dc3a",               # Silah Uğurlukları (Gun Charms)
     "SPRAY": "d5f120f8-ff8c-4aac-92ea-f2b5acbe9475",               # Spreyler

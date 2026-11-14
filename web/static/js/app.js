@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const logsTbody = document.getElementById("logs-tbody");
     const historyActions = document.getElementById("history-actions");
     const historyAccountTitle = document.getElementById("history-account-title");
+    const historyAccountSubtitle = document.getElementById("history-account-subtitle");
     const btnExportLatestHtml = document.getElementById("btn-export-latest-html");
     const btnDeleteAccount = document.getElementById("btn-delete-account");
     const endpointsMenu = document.getElementById("endpoints-menu");
@@ -279,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <!-- Alt Bölümler Sekmesi (Eksiksiz Tüm Bileşenler) -->
         <div class="subtabs-bar">
             <button class="subtab-btn active" data-subtab="subtab-shop"><i class="fa-solid fa-cart-shopping"></i> Günlük Mağaza (${(store.daily_offers || []).length})</button>
-            <button class="subtab-btn" data-subtab="subtab-loadout"><i class="fa-solid fa-vest"></i> Kuşanılmış Envanter (${(loadout.guns || []).length})</button>
+            <button class="subtab-btn" data-subtab="subtab-nightmarket"><i class="fa-solid fa-moon"></i> Gece Pazarı ${store.night_market && store.night_market.is_active ? `(${store.night_market.offers.length})` : '(Kapalı)'}</button>
             <button class="subtab-btn" data-subtab="subtab-skins"><i class="fa-solid fa-gun"></i> Silah Skinleri (${ownedSkins.length})</button>
             <button class="subtab-btn" data-subtab="subtab-buddies"><i class="fa-solid fa-ring"></i> Uğurluklar (${buddies.length})</button>
             <button class="subtab-btn" data-subtab="subtab-sprays"><i class="fa-solid fa-spray-can"></i> Spreyler (${sprays.length})</button>
@@ -294,22 +295,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <!-- 1. GÜNLÜK MAĞAZA -->
         <div id="subtab-shop" class="subtab-content active">
-            <h3 style="margin-bottom: 14px; font-size: 16px;"><i class="fa-regular fa-clock"></i> Kalan Süre: ${store.remaining_duration_text || 'Bilinmiyor'}</h3>
-            <div class="shop-cards-grid">
-                ${(store.daily_offers || []).map(item => `
-                    <div class="shop-item-card" style="border-top: 3px solid ${item.rarity_color || '#ff4655'};">
-                        <div class="shop-item-thumb">
-                            <img src="${item.icon || ''}" alt="${item.skin_name}" loading="lazy">
+            ${(store.daily_offers && store.daily_offers.length > 0) ? `
+                <div class="shop-timer-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <h3 style="font-size: 16px;"><i class="fa-regular fa-clock"></i> Kalan Süre: <strong style="color:var(--accent-yellow);">${store.remaining_duration_text || 'Bilinmiyor'}</strong></h3>
+                    <span style="background:rgba(52,211,153,0.15); color:var(--accent-green); border:1px solid rgba(52,211,153,0.3); padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700;">
+                        <i class="fa-solid fa-circle" style="font-size:8px; vertical-align:middle; margin-right:4px;"></i> 4 Günlük Teklif Aktif
+                    </span>
+                </div>
+                <div class="shop-cards-grid">
+                    ${store.daily_offers.map(item => `
+                        <div class="shop-item-card tactical-card" style="border-top: 3px solid ${item.rarity_color || '#ff4655'};">
+                            <div class="shop-item-thumb">
+                                <img src="${item.icon || ''}" alt="${item.skin_name}" loading="lazy">
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                <span style="font-size: 11px; font-weight: 700; color: ${item.rarity_color || '#fff'};">${item.rarity || 'Standart'}</span>
+                                <strong style="color: var(--accent-red); font-size:13px;"><i class="fa-solid fa-coins"></i> ${(item.price || 1775).toLocaleString()} VP</strong>
+                            </div>
+                            <strong class="shop-item-name">${item.skin_name}</strong>
+                            <small class="shop-item-weapon">${item.weapon_name}</small>
                         </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                            <span style="font-size: 11px; font-weight: 700; color: ${item.rarity_color || '#fff'};">${item.rarity || 'Standart'}</span>
-                            <strong style="color: var(--accent-red); font-size:13px;"><i class="fa-solid fa-coins"></i> ${(item.price || 1775).toLocaleString()} VP</strong>
-                        </div>
-                        <strong class="shop-item-name">${item.skin_name}</strong>
-                        <small class="shop-item-weapon">${item.weapon_name}</small>
-                    </div>
-                `).join('')}
-            </div>
+                    `).join('')}
+                </div>
+            ` : `
+                <div style="background:var(--bg-card); border:1px dashed var(--border-light); border-radius:12px; padding:36px 20px; text-align:center; margin-bottom:20px;">
+                    <i class="fa-solid fa-store-slash" style="font-size: 40px; color: var(--accent-red); margin-bottom: 12px; opacity: 0.85;"></i>
+                    <h4 style="font-size:18px; color:#fff; margin-bottom:6px;">Günlük Mağaza Bilgisi Alınamadı</h4>
+                    <p style="color:var(--text-muted); font-size:13px; max-width:560px; margin:0 auto;">
+                        Riot Games Storefront sunucusu bu oturum bağlantısı veya bölge için teklif listesini döndürmedi. Token süresi dolmuş olabilir veya sunucu yenileme aşamasındadır. Lütfen yeni bir bağlantı alıp tekrar deneyin.
+                    </p>
+                </div>
+            `}
 
             ${store.featured_bundle ? `
                 <h3 style="margin: 28px 0 14px; font-size: 18px; color: var(--accent-yellow);"><i class="fa-solid fa-box-open"></i> Öne Çıkan Paket: ${store.featured_bundle.name}</h3>
@@ -323,22 +339,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             <strong style="font-size:22px; color:var(--accent-red);"><i class="fa-solid fa-coins"></i> ${(store.featured_bundle.total_discounted_cost || 0).toLocaleString()} VP</strong>
                         </div>
                     </div>
-                </div>
-            ` : ''}
-
-            ${store.night_market && store.night_market.is_active ? `
-                <h3 style="margin: 28px 0 14px; font-size: 18px; color: var(--accent-purple);"><i class="fa-solid fa-moon"></i> Gece Pazarı Teklifleri</h3>
-                <div class="shop-cards-grid">
-                    ${store.night_market.offers.map(nm => `
-                        <div class="shop-item-card" style="border: 1px solid var(--accent-purple);">
-                            <div class="shop-item-thumb"><img src="${nm.icon}" alt="${nm.skin_name}"></div>
-                            <strong class="shop-item-name">${nm.skin_name}</strong>
-                            <small class="shop-item-weapon">${nm.weapon_name}</small>
-                            <div style="font-size: 12px; margin-top: 8px; color: var(--accent-purple); font-weight:700;">
-                                İndirim: %${nm.discount_percent} &bull; ${nm.discounted_cost.toLocaleString()} VP <span style="text-decoration:line-through; color:var(--text-muted); font-size:11px;">(${nm.original_cost.toLocaleString()} VP)</span>
-                            </div>
-                        </div>
-                    `).join('')}
                 </div>
             ` : ''}
 
@@ -359,36 +359,64 @@ document.addEventListener("DOMContentLoaded", () => {
             ` : ''}
         </div>
 
-        <!-- 2. KUŞANILMIŞ ENVANTER (LOADOUT + SPREYLER) -->
-        <div id="subtab-loadout" class="subtab-content">
-            <h3 style="margin-bottom: 14px; font-size: 16px;"><i class="fa-solid fa-crosshairs"></i> Kuşanılmış Silahlar</h3>
-            <div class="shop-cards-grid">
-                ${(loadout.guns || []).map(gun => `
-                    <div class="shop-item-card">
-                        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:6px;">
-                            <span>${gun.weapon_name}</span>
-                            <span style="color: ${gun.rarity_color};">${gun.rarity}</span>
-                        </div>
-                        <div class="shop-item-thumb">
-                            <img src="${gun.icon || ''}" alt="${gun.skin_name}">
-                        </div>
-                        <strong class="shop-item-name">${gun.skin_name}</strong>
-                        ${gun.buddy ? `<small style="color: var(--accent-yellow); margin-top: 4px;"><i class="fa-solid fa-ring"></i> ${gun.buddy}</small>` : ''}
+        <!-- 2. GECE PAZARI (NIGHT MARKET) ÖZEL BÖLÜMÜ -->
+        <div id="subtab-nightmarket" class="subtab-content">
+            ${store.night_market && store.night_market.is_active ? `
+                <div class="night-market-header" style="background: linear-gradient(135deg, rgba(147, 51, 234, 0.25), rgba(30, 16, 53, 0.95)); border: 1px solid rgba(168, 85, 247, 0.45); border-radius: 12px; padding: 22px; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                    <div>
+                        <h3 style="font-size: 19px; color: #d8b4fe; margin-bottom: 6px;">
+                            <i class="fa-solid fa-moon"></i> VALORANT Gece Pazarı (Aktif)
+                        </h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+                            Hesabınıza özel şanslı indirimli 6 silah kaplaması. Kalan Süre: <strong style="color:#fcd34d;">${store.night_market.remaining_duration_text || 'Bilinmiyor'}</strong>
+                        </p>
                     </div>
-                `).join('')}
-            </div>
-
-            ${(loadout.sprays && loadout.sprays.length > 0) ? `
-                <h3 style="margin: 28px 0 14px; font-size: 16px;"><i class="fa-solid fa-spray-can"></i> Kuşanılmış Spreyler (4 Yuva)</h3>
+                    <span style="background: rgba(168, 85, 247, 0.25); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.5); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700;">
+                        <i class="fa-solid fa-sparkles"></i> 6 Özel Teklif Açık
+                    </span>
+                </div>
                 <div class="shop-cards-grid">
-                    ${loadout.sprays.map(sp => `
-                        <div class="shop-item-card">
-                            <div class="shop-item-thumb"><img src="${sp.icon}" alt="${sp.name}"></div>
-                            <strong class="shop-item-name">${sp.name}</strong>
+                    ${store.night_market.offers.map(nm => `
+                        <div class="shop-item-card tactical-card" style="border-top: 3px solid ${nm.rarity_color || '#a855f7'}; border-color: rgba(168,85,247,0.3); background: linear-gradient(180deg, rgba(88, 28, 135, 0.15) 0%, var(--bg-card) 100%);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                                <span style="font-size: 11px; font-weight: 700; color: ${nm.rarity_color || '#c084fc'};">${nm.rarity || 'Özel'}</span>
+                                <span style="background: #9333ea; color: #fff; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 6px;">
+                                    -%${nm.discount_percent}
+                                </span>
+                            </div>
+                            <div class="shop-item-thumb">
+                                <img src="${nm.icon || ''}" alt="${nm.skin_name}" loading="lazy">
+                            </div>
+                            <strong class="shop-item-name" style="color: #fff;">${nm.skin_name}</strong>
+                            <small class="shop-item-weapon">${nm.weapon_name}</small>
+                            <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+                                <span style="text-decoration: line-through; color: var(--text-muted); font-size: 12px;">${nm.original_cost.toLocaleString()} VP</span>
+                                <strong style="color: #34d399; font-size: 14px;"><i class="fa-solid fa-coins"></i> ${nm.discounted_cost.toLocaleString()} VP</strong>
+                            </div>
+                            <div style="font-size: 11px; color: #fbbf24; text-align:right; margin-top:2px;">
+                                Tasarruf: ${((nm.discount_saved || (nm.original_cost - nm.discounted_cost)) || 0).toLocaleString()} VP
+                            </div>
                         </div>
                     `).join('')}
                 </div>
-            ` : ''}
+            ` : `
+                <div style="background: linear-gradient(145deg, rgba(20, 10, 35, 0.7), var(--bg-card)); border: 1px dashed rgba(168, 85, 247, 0.4); border-radius: 14px; padding: 48px 24px; text-align: center; margin-bottom: 20px;">
+                    <div style="width: 72px; height: 72px; border-radius: 50%; background: rgba(168, 85, 247, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 1px solid rgba(168, 85, 247, 0.3);">
+                        <i class="fa-solid fa-moon" style="font-size: 32px; color: #c084fc;"></i>
+                    </div>
+                    <h4 style="font-size: 20px; color: #fff; margin-bottom: 8px;">Gece Pazarı Şu Anda Aktif Değil</h4>
+                    <span style="display:inline-block; background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 14px;">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Sezon Arası Beklemede
+                    </span>
+                    <p style="color: var(--text-muted); font-size: 13.5px; max-width: 620px; margin: 0 auto 18px; line-height: 1.6;">
+                        VALORANT Gece Pazarı dönemsel olarak Riot Games tarafından küresel etkinliklerde (genellikle her Bölüm veya Kısım ortasında ve sonlarında 2-3 haftalığına) açılır.
+                    </p>
+                    <div style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border); border-radius: 8px; max-width: 500px; margin: 0 auto; padding: 12px 16px; font-size: 12px; color: var(--text-muted); text-align: left;">
+                        <div style="color: #38bdf8; font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-shield-halved"></i> Canlı Kontrol Sonucu:</div>
+                        Riot Games sunucusu (Storefront v3) bu hesap için şu anda açık bir <code style="color:#d8b4fe;">BonusStore</code> teklifi döndürmedi. Gece Pazarı açıldığı anda burada 6 indirimli kartınız ve indirim oranlarınız otomatik olarak listelenecektir.
+                    </div>
+                </div>
+            `}
         </div>
 
         <!-- 3. SAHİP OLUNAN SİLAH SKİNLERİ -->
@@ -460,34 +488,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <!-- 8. AJANLAR (AGENTS) -->
         <div id="subtab-agents" class="subtab-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 style="font-size:16px;"><i class="fa-solid fa-user-shield"></i> Oynanabilir Ajan Kadrosu (${agentsRoster.filter(a => a.is_unlocked).length} / ${agentsRoster.length || 26} Açık)</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                <div>
+                    <h3 style="font-size:16px;"><i class="fa-solid fa-user-shield"></i> Oynanabilir Ajan Kadrosu (${agentsRoster.filter(a => a.is_unlocked).length} / ${agentsRoster.length || 26} Açık)</h3>
+                    <small style="color:var(--text-muted); font-size:12px;">Hesapta açık olan ve kilitli olan tüm oynanabilir karakterler.</small>
+                </div>
+                <div class="agent-filter-pills" style="display:flex; gap:6px;">
+                    <button class="agent-filter-btn active" data-agent-filter="all" style="padding:4px 10px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--bg-hover); color:#fff; cursor:pointer;">Tümü (${agentsRoster.length})</button>
+                    <button class="agent-filter-btn" data-agent-filter="unlocked" style="padding:4px 10px; font-size:12px; border-radius:6px; border:1px solid rgba(52,211,153,0.3); background:transparent; color:var(--accent-green); cursor:pointer;">Açık (${agentsRoster.filter(a => a.is_unlocked).length})</button>
+                    <button class="agent-filter-btn" data-agent-filter="locked" style="padding:4px 10px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:transparent; color:var(--text-dim); cursor:pointer;">Kilitli (${agentsRoster.filter(a => !a.is_unlocked).length})</button>
+                </div>
             </div>
-            <div class="agents-roster-grid">
-                ${agentsRoster.length > 0 ? agentsRoster.map(a => `
-                    <div class="agent-roster-card ${a.is_unlocked ? 'unlocked' : 'locked'}">
-                        <div class="agent-avatar-wrap">
-                            <img src="${a.fullPortrait || a.icon || ''}" alt="${a.name}" class="agent-portrait" loading="lazy">
-                            <span class="agent-status-badge ${a.is_unlocked ? 'badge-unlocked' : 'badge-locked'}">
-                                <i class="fa-solid fa-${a.is_unlocked ? 'check' : 'lock'}"></i> ${a.is_unlocked ? 'Açık' : 'Kilitli'}
-                            </span>
-                        </div>
-                        <div class="agent-info-wrap">
-                            <div class="agent-role-tag">
-                                ${a.role_icon ? `<img src="${a.role_icon}" style="width:13px; height:13px; vertical-align:middle;">` : ''}
-                                <span>${a.role || 'Ajan'}</span>
-                            </div>
-                            <strong class="agent-name">${a.name}</strong>
-                            <div class="agent-abilities-row">
-                                ${(a.abilities || []).slice(0, 4).map(ab => `
-                                    <div class="ability-icon-pill" title="${ab.slot}: ${ab.name}">
-                                        ${ab.icon ? `<img src="${ab.icon}" alt="${ab.name}">` : `<span>${ab.slot}</span>`}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                `).join('') : `<div style="grid-column: 1/-1; text-align:center; padding:30px; color:var(--text-muted);">Ajan bilgisi yüklenemedi.</div>`}
+            <div class="agents-roster-grid" id="agents-grid-container">
+                ${renderAgentsRosterCards(agentsRoster, 'all')}
             </div>
         </div>
 
@@ -640,6 +653,23 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
+        // Ajan filtreleme
+        const agentsGrid = document.getElementById("agents-grid-container");
+        document.querySelectorAll(".agent-filter-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".agent-filter-btn").forEach(b => {
+                    b.classList.remove("active");
+                    b.style.background = "transparent";
+                });
+                btn.classList.add("active");
+                btn.style.background = "var(--bg-hover)";
+                const filter = btn.dataset.agentFilter;
+                if (agentsGrid) {
+                    agentsGrid.innerHTML = renderAgentsRosterCards(agentsRoster, filter);
+                }
+            });
+        });
+
         // Skin filtreleme
         const skinSearch = document.getElementById("skin-search-filter");
         const skinFilter = document.getElementById("skin-weapon-filter");
@@ -688,6 +718,47 @@ document.addEventListener("DOMContentLoaded", () => {
         `).join('');
     }
 
+    function renderAgentsRosterCards(roster, filter = "all") {
+        if (!roster || roster.length === 0) {
+            return `<div style="grid-column: 1/-1; text-align:center; padding:30px; color:var(--text-muted);">Ajan bilgisi yüklenemedi.</div>`;
+        }
+        let list = roster;
+        if (filter === "unlocked") {
+            list = roster.filter(a => a.is_unlocked);
+        } else if (filter === "locked") {
+            list = roster.filter(a => !a.is_unlocked);
+        }
+
+        if (list.length === 0) {
+            return `<div style="grid-column: 1/-1; text-align:center; padding:30px; color:var(--text-muted);">Filtreye uygun ajan bulunamadı.</div>`;
+        }
+
+        return list.map(a => `
+            <div class="agent-roster-card ${a.is_unlocked ? 'unlocked' : 'locked'}">
+                <div class="agent-avatar-wrap">
+                    <img src="${a.fullPortrait || a.icon || ''}" alt="${a.name}" class="agent-portrait" loading="lazy">
+                    <span class="agent-status-badge ${a.is_unlocked ? 'badge-unlocked' : 'badge-locked'}">
+                        <i class="fa-solid fa-${a.is_unlocked ? 'check' : 'lock'}"></i> ${a.is_unlocked ? 'Açık' : 'Kilitli'}
+                    </span>
+                </div>
+                <div class="agent-info-wrap">
+                    <div class="agent-role-tag">
+                        ${a.role_icon ? `<img src="${a.role_icon}" style="width:13px; height:13px; vertical-align:middle;">` : ''}
+                        <span>${a.role || 'Ajan'}</span>
+                    </div>
+                    <strong class="agent-name">${a.name}</strong>
+                    <div class="agent-abilities-row">
+                        ${(a.abilities || []).slice(0, 4).map(ab => `
+                            <div class="ability-icon-pill" title="${ab.slot}: ${ab.name}">
+                                ${ab.icon ? `<img src="${ab.icon}" alt="${ab.name}">` : `<span>${ab.slot}</span>`}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
     // ========================================================
     // HIZLI HESAPLAR LİSTESİ
     // ========================================================
@@ -708,7 +779,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div class="quick-acc-name">${acc.riot_id}</div>
                         <div class="quick-acc-sub">Lv. ${acc.last_level} &bull; ${acc.region.toUpperCase()} &bull; ${acc.total_checks} kontrol</div>
                     </div>
-                    <div class="quick-acc-rank" style="color: var(--accent-red);">${acc.last_rank_name}</div>
+                    <div class="quick-acc-rank" style="color: var(--accent-red);">${acc.last_rank_name || 'Derecesiz'}</div>
                 </div>
             `).join('');
 
@@ -743,49 +814,66 @@ document.addEventListener("DOMContentLoaded", () => {
     // ========================================================
     // GEÇMİŞ LOGLAR VE HESAPLAR TABI
     // ========================================================
+    let cachedAccountsList = [];
+
     async function loadAccountsList() {
         try {
             const res = await fetch("/api/accounts");
-            const accounts = await res.json();
+            cachedAccountsList = await res.json();
+            renderAccountsSidebar(cachedAccountsList);
 
-            if (accounts.length === 0) {
-                historyAccountsList.innerHTML = `<div style="padding:15px; color:var(--text-muted); font-size:13px;">Kayıtlı hesap yok.</div>`;
-                logsTbody.innerHTML = `<tr><td colspan="9" class="empty-cell">Veritabanında henüz hesap kaydı bulunmuyor.</td></tr>`;
-                historyActions.style.display = "none";
-                return;
-            }
-
-            historyAccountsList.innerHTML = accounts.map(acc => `
-                <div class="acc-select-btn ${selectedHistoryPuuid === acc.puuid ? 'active' : ''}" data-puuid="${acc.puuid}">
-                    <strong style="display:block; font-size:14px; color:#fff;">${acc.riot_id}</strong>
-                    <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-                        ${acc.region.toUpperCase()} &bull; Lv. ${acc.last_level} &bull; ${acc.total_checks} Kontrol
-                    </div>
-                </div>
-            `).join('');
-
-            document.querySelectorAll(".acc-select-btn").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    document.querySelectorAll(".acc-select-btn").forEach(b => b.classList.remove("active"));
-                    btn.classList.add("active");
-                    selectedHistoryPuuid = btn.dataset.puuid;
-                    loadAccountLogs(selectedHistoryPuuid);
-                });
-            });
-
-            if (!selectedHistoryPuuid && accounts.length > 0) {
-                selectedHistoryPuuid = accounts[0].puuid;
-                const firstBtn = document.querySelector(`.acc-select-btn[data-puuid="${selectedHistoryPuuid}"]`);
-                if (firstBtn) firstBtn.classList.add("active");
+            if (!selectedHistoryPuuid && cachedAccountsList.length > 0) {
+                selectedHistoryPuuid = cachedAccountsList[0].puuid;
                 loadAccountLogs(selectedHistoryPuuid);
             }
-
         } catch (e) {
-            console.error(e);
+            console.error("loadAccountsList error:", e);
         }
     }
 
+    function renderAccountsSidebar(accounts) {
+        if (!accounts || accounts.length === 0) {
+            historyAccountsList.innerHTML = `<div style="padding:15px; color:var(--text-muted); font-size:13px;">Kayıtlı hesap yok.</div>`;
+            logsTbody.innerHTML = `<tr><td colspan="9" class="empty-cell">Veritabanında henüz hesap kaydı bulunmuyor.</td></tr>`;
+            historyActions.style.display = "none";
+            return;
+        }
+
+        historyAccountsList.innerHTML = accounts.map(acc => `
+            <div class="acc-select-btn ${selectedHistoryPuuid === acc.puuid ? 'active' : ''}" data-puuid="${acc.puuid}">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="font-size:14px; color:#fff;">${acc.riot_id}</strong>
+                    <span class="region-tag" style="font-size:10px; padding:1px 6px;">${(acc.region || 'EU').toUpperCase()}</span>
+                </div>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                    Lv. ${acc.last_level} &bull; <span style="color:var(--accent-red); font-weight:600;">${acc.last_rank_name || 'Derecesiz'}</span> &bull; ${acc.total_checks} Kontrol
+                </div>
+            </div>
+        `).join('');
+
+        document.querySelectorAll(".acc-select-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".acc-select-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                selectedHistoryPuuid = btn.dataset.puuid;
+                loadAccountLogs(selectedHistoryPuuid);
+            });
+        });
+    }
+
+    if (accountFilterInput) {
+        accountFilterInput.addEventListener("input", () => {
+            const q = (accountFilterInput.value || "").toLowerCase().trim();
+            const filtered = cachedAccountsList.filter(a =>
+                (a.riot_id || "").toLowerCase().includes(q) ||
+                (a.puuid || "").toLowerCase().includes(q)
+            );
+            renderAccountsSidebar(filtered);
+        });
+    }
+
     async function loadAccountLogs(puuid) {
+        if (!puuid) return;
         try {
             const res = await fetch(`/api/accounts/${puuid}/logs`);
             const logs = await res.json();
@@ -793,7 +881,14 @@ document.addEventListener("DOMContentLoaded", () => {
             historyActions.style.display = "flex";
             if (logs.length > 0) {
                 historyAccountTitle.innerHTML = `<i class="fa-solid fa-list-check"></i> ${logs[0].riot_id} - Kontrol Geçmişi`;
-                historyAccountSubtitle.textContent = `Toplam ${logs.length} adet detaylı kontrol kaydı listeleniyor.`;
+                if (historyAccountSubtitle) {
+                    historyAccountSubtitle.textContent = `Toplam ${logs.length} adet detaylı kontrol kaydı listeleniyor.`;
+                }
+            } else {
+                historyAccountTitle.innerHTML = `<i class="fa-solid fa-list-check"></i> Hesap Kontrol Geçmişi`;
+                if (historyAccountSubtitle) {
+                    historyAccountSubtitle.textContent = `Bu hesaba ait kayıtlı log bulunamadı.`;
+                }
             }
 
             if (logs.length === 0) {
@@ -803,29 +898,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
             logsTbody.innerHTML = logs.map(log => `
                 <tr>
-                    <td>#${log.id}</td>
+                    <td><strong>#${log.id}</strong></td>
                     <td><strong>${log.check_date_local}</strong></td>
                     <td><span class="region-tag">${(log.region || 'EU').toUpperCase()}</span></td>
                     <td><strong>Lv. ${log.level}</strong></td>
                     <td><strong>${log.rank_name}</strong> (${log.ranked_rating} RR)</td>
-                    <td><span style="color:#ff4655;">${log.wallet_vp} VP</span> / <span style="color:#00ffb3;">${log.wallet_rp} RP</span> / <span style="color:#f0bd4f;">${log.wallet_kc} KC</span></td>
+                    <td>
+                        <span style="color:#ff4655; font-weight:700;">${(log.wallet_vp || 0).toLocaleString()} VP</span> / 
+                        <span style="color:#00ffb3; font-weight:700;">${(log.wallet_rp || 0).toLocaleString()} RP</span> / 
+                        <span style="color:#f0bd4f; font-weight:700;">${(log.wallet_kc || 0).toLocaleString()} KC</span>
+                    </td>
                     <td><span class="${log.penalty_status === 'Temiz' ? 'good' : 'bad'}">${log.penalty_status}</span></td>
                     <td><strong>${log.skins_count}</strong> Skin</td>
                     <td>
-                        <button class="btn btn-outline" style="padding:4px 8px; font-size:12px;" onclick="viewHistoricalLog(${log.id})">
-                            <i class="fa-solid fa-eye"></i> Detay
-                        </button>
-                        <button class="btn btn-outline" style="padding:4px 8px; font-size:12px;" onclick="exportLogHtml(${log.id})">
-                            <i class="fa-solid fa-file-export"></i> HTML
-                        </button>
+                        <div style="display:flex; gap:4px; align-items:center;">
+                            <button class="btn btn-outline" style="padding:4px 8px; font-size:12px;" onclick="viewHistoricalLog(${log.id})" title="Detayları Görüntüle">
+                                <i class="fa-solid fa-eye"></i> İncele
+                            </button>
+                            <button class="btn btn-outline" style="padding:4px 8px; font-size:12px;" onclick="exportLogHtml(${log.id})" title="HTML Raporu İndir">
+                                <i class="fa-solid fa-file-export"></i> HTML
+                            </button>
+                            <button class="btn btn-danger-outline" style="padding:4px 8px; font-size:12px;" onclick="deleteHistoricalLog(${log.id})" title="Bu Log Kaydını Sil">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `).join('');
 
         } catch (e) {
-            console.error(e);
+            console.error("loadAccountLogs error:", e);
         }
     }
+
+    window.deleteHistoricalLog = async function(logId) {
+        if (!confirm(`Log #${logId} kaydını veritabanından kalıcı olarak silmek istediğinize emin misiniz?`)) return;
+        try {
+            const res = await fetch(`/api/logs/${logId}`, { method: "DELETE" });
+            if (res.ok) {
+                showToast(`Log #${logId} silindi.`, "success");
+                if (selectedHistoryPuuid) {
+                    loadAccountLogs(selectedHistoryPuuid);
+                }
+                loadQuickAccounts();
+                updateDbStats();
+            } else {
+                showToast("Log silinemedi.", "error");
+            }
+        } catch(e) {
+            showToast("Silme isteği başarısız oldu.", "error");
+        }
+    };
 
     window.viewHistoricalLog = async function(logId) {
         try {

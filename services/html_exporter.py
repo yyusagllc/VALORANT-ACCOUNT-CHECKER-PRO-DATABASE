@@ -116,23 +116,31 @@ def generate_account_html_report(snapshot: Dict[str, Any], open_in_browser: bool
         </div>
         """)
 
-    # 2. KUŞANILMIŞ SİLAHLAR
-    equipped_guns = loadout.get("guns", []) or []
-    equipped_cards_html = []
-    for gun in equipped_guns:
-        buddy_html = f"<div class='equipped-buddy'><span>Uğurluk:</span> <strong>{esc(gun.get('buddy'))}</strong></div>" if gun.get("buddy") else ""
-        equipped_cards_html.append(f"""
-        <div class="loadout-gun-card">
-            <div class="gun-header">
-                <span class="gun-type">{esc(gun.get('weapon_name'))}</span>
-                <span class="gun-rarity" style="color: {esc(gun.get('rarity_color'))};">{esc(gun.get('rarity'))}</span>
+    # 2. GECE PAZARI (NIGHT MARKET)
+    night_market = store.get("night_market", {}) or {}
+    night_market_offers = night_market.get("offers", []) or []
+    night_market_cards_html = []
+    for nm in night_market_offers:
+        night_market_cards_html.append(f"""
+        <div class="shop-card" style="border-top: 3px solid {esc(nm.get('rarity_color', '#a855f7'))}; background: linear-gradient(180deg, rgba(88,28,135,0.15) 0%, #1e293b 100%);">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px 12px 0;">
+                <span class="rarity-tag" style="background:{esc(nm.get('rarity_color', '#a855f7'))}33; color:{esc(nm.get('rarity_color', '#a855f7'))};">
+                    {esc(nm.get('rarity', 'Özel'))}
+                </span>
+                <span style="background:#9333ea; color:#fff; font-size:11px; font-weight:800; padding:2px 7px; border-radius:6px;">
+                    -%{esc(nm.get('discount_percent', 0))}
+                </span>
             </div>
-            <div class="gun-image-wrap">
-                <img src="{esc(gun.get('icon', ''))}" alt="{esc(gun.get('skin_name'))}" loading="lazy" class="gun-image" />
+            <div class="shop-thumb-wrap">
+                <img src="{esc(nm.get('icon', ''))}" alt="{esc(nm.get('skin_name'))}" loading="lazy" class="shop-thumb" />
             </div>
-            <div class="gun-footer">
-                <strong class="gun-skin-name">{esc(gun.get('skin_name'))}</strong>
-                {buddy_html}
+            <div class="shop-info">
+                <strong class="shop-name">{esc(nm.get('skin_name'))}</strong>
+                <small class="shop-sub">{esc(nm.get('weapon_name'))}</small>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+                    <span style="text-decoration:line-through; color:#94a3b8; font-size:12px;">{num_tr(nm.get('original_cost', 0))} VP</span>
+                    <strong style="color:#34d399; font-size:13px;">{num_tr(nm.get('discounted_cost', 0))} VP</strong>
+                </div>
             </div>
         </div>
         """)
@@ -603,13 +611,15 @@ def generate_account_html_report(snapshot: Dict[str, Any], open_in_browser: bool
             </div>
         </section>
 
-        <!-- KUŞANILMIŞ SİLAHLAR -->
+        <!-- GECE PAZARI (AKTİFSE) -->
+        {f'''
         <section>
-            <h2 class="section-title">Kuşanılmış Silahlar</h2>
-            <div class="loadout-grid">
-                {''.join(equipped_cards_html)}
+            <h2 class="section-title" style="color:#d8b4fe;">🌙 Gece Pazarı Teklifleri ({len(night_market_offers)} İndirimli Kaplama)</h2>
+            <div class="shop-grid">
+                {''.join(night_market_cards_html)}
             </div>
         </section>
+        ''' if night_market.get("is_active") and night_market_cards_html else ''}
 
         <!-- SAHİP OLUNAN SKİNLER -->
         <section>
