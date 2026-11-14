@@ -85,7 +85,7 @@ Proje, [dash.valorant-api.com](https://dash.valorant-api.com/) üzerinde yer ala
 
 1. Depoyu klonlayın veya zip olarak indirin:
 ```bash
-git clone https://github.com/kullanici-adiniz/ValoChecker2.git
+git clone https://github.com/yyusagllc/VALORANT-ACCOUNT-CHECKER-PRO-DATABASE.git
 cd ValoChecker2
 ```
 
