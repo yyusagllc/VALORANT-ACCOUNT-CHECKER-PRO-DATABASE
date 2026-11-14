@@ -1,0 +1,117 @@
+VALORANT-API.COM — API UÇ NOKTALARI Kaynak:
+https://dash.valorant-api.com/ Temel adres: https://valorant-api.com API
+sürümü: /v1 HTTP metodu: GET Kimlik doğrulama: Genel içerik API’si için
+API anahtarı gerekmez.
+
+NOT Bu dosya valorant-api.com içerik/veri API’sini kapsar. Riot
+istemcisinin oturum, mağaza, envanter, maç geçmişi gibi dahili/hesap
+bazlı uç noktaları bu API’ye dahil değildir. Skinler, silah uç
+noktasının altındaki veriler olarak sunulur; ayrı bir /skins uç noktası
+olduğu varsayılmamalıdır.
+
+============================================================ 1) KAYNAK
+LİSTELERİ VE DETAY UÇ NOKTALARI
+============================================================
+
+AGENTS GET https://valorant-api.com/v1/agents GET
+https://valorant-api.com/v1/agents/{uuid}
+
+WEAPONS (skinler, chroma’lar ve seviyeler dahil) GET
+https://valorant-api.com/v1/weapons GET
+https://valorant-api.com/v1/weapons/{uuid}
+
+MAPS GET https://valorant-api.com/v1/maps GET
+https://valorant-api.com/v1/maps/{uuid}
+
+PLAYER CARDS GET https://valorant-api.com/v1/playercards GET
+https://valorant-api.com/v1/playercards/{uuid}
+
+BUDDIES GET https://valorant-api.com/v1/buddies GET
+https://valorant-api.com/v1/buddies/{uuid}
+
+SPRAYS GET https://valorant-api.com/v1/sprays GET
+https://valorant-api.com/v1/sprays/{uuid}
+
+BUNDLES GET https://valorant-api.com/v1/bundles GET
+https://valorant-api.com/v1/bundles/{uuid}
+
+COMPETITIVE TIERS GET https://valorant-api.com/v1/competitivetiers GET
+https://valorant-api.com/v1/competitivetiers/{uuid}
+
+CEREMONIES GET https://valorant-api.com/v1/ceremonies GET
+https://valorant-api.com/v1/ceremonies/{uuid}
+
+CONTENT TIERS GET https://valorant-api.com/v1/contenttiers GET
+https://valorant-api.com/v1/contenttiers/{uuid}
+
+CONTRACTS GET https://valorant-api.com/v1/contracts GET
+https://valorant-api.com/v1/contracts/{uuid}
+
+CURRENCIES GET https://valorant-api.com/v1/currencies GET
+https://valorant-api.com/v1/currencies/{uuid}
+
+EVENTS GET https://valorant-api.com/v1/events GET
+https://valorant-api.com/v1/events/{uuid}
+
+FLEX GET https://valorant-api.com/v1/flex GET
+https://valorant-api.com/v1/flex/{uuid}
+
+GAME MODES GET https://valorant-api.com/v1/gamemodes GET
+https://valorant-api.com/v1/gamemodes/{uuid}
+
+GEAR GET https://valorant-api.com/v1/gear GET
+https://valorant-api.com/v1/gear/{uuid}
+
+LEVEL BORDERS GET https://valorant-api.com/v1/levelborders GET
+https://valorant-api.com/v1/levelborders/{uuid}
+
+PLAYER TITLES GET https://valorant-api.com/v1/playertitles GET
+https://valorant-api.com/v1/playertitles/{uuid}
+
+SEASONS GET https://valorant-api.com/v1/seasons GET
+https://valorant-api.com/v1/seasons/{uuid}
+
+THEMES GET https://valorant-api.com/v1/themes GET
+https://valorant-api.com/v1/themes/{uuid}
+
+============================================================ 2) SÜRÜM
+BİLGİSİ ============================================================
+
+GET https://valorant-api.com/v1/version
+
+============================================================ 3) DİL
+PARAMETRESİ ============================================================
+
+Birçok içerik uç noktasında dil parametresi kullanılabilir:
+
+?language=tr-TR ?language=en-US ?language=all
+
+Örnek: GET https://valorant-api.com/v1/agents?language=tr-TR
+
+============================================================ 4) HIZLI
+KOPYALANABİLİR UÇ NOKTA KÖKLERİ
+============================================================
+
+https://valorant-api.com/v1/agents https://valorant-api.com/v1/weapons
+https://valorant-api.com/v1/maps https://valorant-api.com/v1/playercards
+https://valorant-api.com/v1/buddies https://valorant-api.com/v1/sprays
+https://valorant-api.com/v1/bundles
+https://valorant-api.com/v1/competitivetiers
+https://valorant-api.com/v1/ceremonies
+https://valorant-api.com/v1/contenttiers
+https://valorant-api.com/v1/contracts
+https://valorant-api.com/v1/currencies
+https://valorant-api.com/v1/events https://valorant-api.com/v1/flex
+https://valorant-api.com/v1/gamemodes https://valorant-api.com/v1/gear
+https://valorant-api.com/v1/levelborders
+https://valorant-api.com/v1/playertitles
+https://valorant-api.com/v1/seasons https://valorant-api.com/v1/themes
+https://valorant-api.com/v1/version
+
+============================================================
+DOKÜMANTASYON
+============================================================
+
+Dashboard: https://dash.valorant-api.com/ API ana sayfası:
+https://valorant-api.com/ Bu API resmi Riot Games API’si değildir;
+

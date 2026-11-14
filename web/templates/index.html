@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VALORANT Account Checker & Database</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <!-- ÜST NAVİGASYON -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fa-solid fa-crosshairs brand-icon"></i>
+                <div class="brand-text">
+                    <span class="brand-title">VALO<strong>CHECKER</strong></span>
+                    <span class="brand-badge">PRO DATABASE v2.0</span>
+                </div>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="tab-check">
+                    <i class="fa-solid fa-bolt"></i> Hesap Kontrolü
+                </button>
+                <button class="nav-tab" data-tab="tab-details" id="nav-tab-details">
+                    <i class="fa-solid fa-user-astronaut"></i> Hesap Detayı &amp; Son Log
+                </button>
+                <button class="nav-tab" data-tab="tab-history">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Geçmiş Loglar &amp; Veritabanı
+                </button>
+                <button class="nav-tab" data-tab="tab-explorer">
+                    <i class="fa-solid fa-database"></i> API Veri Gezgini (30 Uç Nokta)
+                </button>
+            </div>
+
+            <div class="nav-stats">
+                <div class="db-pill" id="db-stats-pill" title="Veritabanı Durumu">
+                    <i class="fa-solid fa-server"></i>
+                    <span id="db-summary-text">Yükleniyor...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ANA İÇERİK ALANI -->
+    <main class="main-content">
+
+        <!-- ========================================================
+             1. TAB: HESAP KONTROLÜ
+             ======================================================== -->
+        <section id="tab-check" class="tab-pane active">
+            <div class="checker-hero">
+                <div class="checker-card">
+                    <div class="checker-header">
+                        <h2><i class="fa-solid fa-shield-halved"></i> Riot Hesabı Kontrol Et</h2>
+                        <p>Riot oturum bağlantınızı girin. Hesap tüm endpoint'ler üzerinden taranacak, veritabanına loglanacak ve tam dökümü gösterilecektir.</p>
+                    </div>
+
+                    <div class="auth-helper-box">
+                        <div class="auth-step-info">
+                            <div class="step-num">1</div>
+                            <div class="step-desc">
+                                <strong>Riot Giriş Sayfasını Aç:</strong> Resmi Riot Games OAuth giriş sayfasına giderek hesabınıza giriş yapın.
+                            </div>
+                            <a href="https://auth.riotgames.com/authorize?client_id=play-valorant-web-prod&nonce=1&redirect_uri=https://playvalorant.com/opt_in&response_type=token%20id_token&scope=account%20openid" target="_blank" class="btn btn-outline-riot" id="btn-open-riot">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Riot Giriş Sayfasını Aç
+                            </a>
+                        </div>
+                        <div class="auth-step-info">
+                            <div class="step-num">2</div>
+                            <div class="step-desc">
+                                <strong>Yönlendirilen URL'yi Kopyala &amp; Yapıştır:</strong> Giriş yaptıktan sonra tarayıcınızın adres çubuğundaki (<code>playvalorant.com/opt_in#access_token=...</code>) URL'sini kopyalayıp aşağıdaki kutucuğa yapıştırın.
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="check-form" class="checker-form">
+                        <div class="form-group">
+                            <label for="redirect-url">Yönlendirme URL'si veya Access Token:</label>
+                            <div class="input-with-icon">
+                                <i class="fa-solid fa-key input-icon"></i>
+                                <input type="text" id="redirect-url" name="redirect_url" placeholder="https://playvalorant.com/opt_in#access_token=ey..." required autocomplete="off">
+                                <button type="button" class="btn-paste" id="btn-paste-clipboard" title="Panodan Yapıştır">
+                                    <i class="fa-regular fa-paste"></i> Yapıştır
+                                </button>
+                            </div>
+                            <small class="form-hint"><i class="fa-solid fa-circle-info"></i> Bu URL erişim belirteci içerir. Tamamen yerel bilgisayarınızda işlenir ve dışarı sızdırılmaz.</small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-half">
+                                <label for="region-select">Hesap Bölgesi:</label>
+                                <select id="region-select" name="region">
+                                    <option value="eu" selected>Avrupa (EU) - Türkiye &amp; TR Sunucusu</option>
+                                    <option value="na">Kuzey Amerika (NA)</option>
+                                    <option value="ap">Asya Pasifik (AP)</option>
+                                    <option value="kr">Kore (KR)</option>
+                                    <option value="latam">Latin Amerika (LATAM)</option>
+                                    <option value="br">Brezilya (BR)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group col-half">
+                                <label for="check-notes">Kontrol Notu (Opsiyonel):</label>
+                                <input type="text" id="check-notes" name="notes" placeholder="Örn: Dereceli maç öncesi, Mağaza kontrolü vb.">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-large" id="btn-submit-check">
+                                <i class="fa-solid fa-magnifying-glass"></i> HESABI KONTROL ET VE DETAYLI LOGLA
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Kontrol Yükleniyor / Durum Animasyonu -->
+                    <div id="check-progress" class="check-progress-box hidden">
+                        <div class="spinner"></div>
+                        <div class="progress-details">
+                            <h3 id="progress-status-title">Riot API ile İletişim Kuruluyor...</h3>
+                            <p id="progress-status-subtitle">Kimlik doğrulanıyor, envanter, seviye, mağaza ve maçlar taranıyor...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Son Kontrol Edilen Hesaplar Hızlı Liste -->
+                <div class="quick-accounts-card">
+                    <div class="quick-header">
+                        <h3><i class="fa-solid fa-users"></i> Kayıtlı Hesaplar</h3>
+                        <span class="count-badge" id="quick-accounts-count">0</span>
+                    </div>
+                    <div class="quick-accounts-list" id="quick-accounts-list">
+                        <div class="empty-state">Henüz kayıtlı hesap yok.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================
+             2. TAB: HESAP DETAYI VE SON LOG
+             ======================================================== -->
+        <section id="tab-details" class="tab-pane">
+            <div id="details-container">
+                <div class="empty-details-card">
+                    <i class="fa-solid fa-address-card empty-icon"></i>
+                    <h3>Henüz Bir Hesap Seçilmedi veya Kontrol Edilmedi</h3>
+                    <p>Yukarıdaki <strong>Hesap Kontrolü</strong> sekmesinden yeni bir hesap tarayabilir veya <strong>Geçmiş Loglar</strong> sekmesinden kayıtlı bir hesabı seçebilirsiniz.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================
+             3. TAB: GEÇMİŞ LOGLAR VE VERİTABANI
+             ======================================================== -->
+        <section id="tab-history" class="tab-pane">
+            <div class="history-layout">
+                <div class="history-sidebar">
+                    <div class="sidebar-header">
+                        <h3><i class="fa-solid fa-database"></i> Hesap Listesi</h3>
+                    </div>
+                    <div class="account-search-box">
+                        <input type="text" id="account-filter-input" placeholder="Riot ID veya PUUID ara...">
+                    </div>
+                    <div class="account-list" id="history-accounts-list">
+                        <!-- JS ile dolacak -->
+                    </div>
+                </div>
+
+                <div class="history-main">
+                    <div class="history-main-header">
+                        <div>
+                            <h2 id="history-account-title"><i class="fa-solid fa-list-check"></i> Hesap Kontrol Logları</h2>
+                            <p id="history-account-subtitle">Seçili hesaba ait geçmiş taramaların kronolojik dökümü.</p>
+                        </div>
+                        <div class="history-actions" id="history-actions" style="display: none;">
+                            <button class="btn btn-outline" id="btn-export-latest-html">
+                                <i class="fa-solid fa-file-export"></i> Son Logu HTML İndir
+                            </button>
+                            <button class="btn btn-danger-outline" id="btn-delete-account">
+                                <i class="fa-solid fa-trash"></i> Hesabı Sil
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="logs-table-wrap">
+                        <table class="data-table" id="logs-table">
+                            <thead>
+                                <tr>
+                                    <th>Log ID</th>
+                                    <th>Kontrol Tarihi</th>
+                                    <th>Bölge</th>
+                                    <th>Seviye</th>
+                                    <th>Kademe (Rank)</th>
+                                    <th>VP / RP / KC</th>
+                                    <th>Ceza Durumu</th>
+                                    <th>Skin Sayısı</th>
+                                    <th>İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-tbody">
+                                <tr><td colspan="9" class="empty-cell">Lütfen sol taraftan bir hesap seçin.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================
+             4. TAB: VALORANT API VERİ GEZGİNİ (21 UÇ NOKTA)
+             ======================================================== -->
+        <section id="tab-explorer" class="tab-pane">
+            <div class="explorer-layout">
+                <div class="explorer-sidebar">
+                    <div class="sidebar-header">
+                        <h3><i class="fa-solid fa-network-wired"></i> dash.valorant-api.com (30 Uç Nokta)</h3>
+                    </div>
+                    <div class="endpoints-list" id="endpoints-menu">
+                        <!-- JS ile dolacak -->
+                    </div>
+                </div>
+
+                <div class="explorer-main">
+                    <div class="explorer-header">
+                        <div>
+                            <h2 id="endpoint-active-title">Ajanlar (Agents)</h2>
+                            <p id="endpoint-active-desc">Yükleniyor...</p>
+                            <code class="endpoint-url-badge" id="endpoint-active-url">https://valorant-api.com/v1/agents</code>
+                        </div>
+                        <div class="explorer-controls">
+                            <input type="text" id="endpoint-search-input" placeholder="İçerik içinde ara..." class="explorer-search">
+                            <button class="btn btn-outline" id="btn-refresh-endpoint">
+                                <i class="fa-solid fa-rotate-right"></i> Yenile
+                            </button>
+                            <button class="btn btn-outline" id="btn-view-raw-json">
+                                <i class="fa-solid fa-code"></i> Ham JSON Gör
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-content-grid" id="endpoint-items-grid">
+                        <!-- JS ile kartlar dolacak -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Ham JSON İnceleme Modalı -->
+    <div id="json-modal" class="modal-overlay hidden">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 id="json-modal-title">Ham JSON Verisi</h3>
+                <button class="btn-close-modal" id="btn-close-json-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre><code id="json-modal-code"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bildirim Toast Kutusu -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Custom JS -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
